@@ -9,6 +9,7 @@ import de.uniba.wiai.lspi.chord.service.impl.ChordImpl;
 
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.util.HashMap;
 import java.util.Properties;
 
 @Library(name="OpenChord")
@@ -20,6 +21,7 @@ import java.util.Properties;
 @Provides({
     @ProvidedPort(name = "receive", type = PortType.MESSAGE)
 })
+
 public class OpenChordNode extends AbstractComponentType {
 	
 	private Chord node;
@@ -47,6 +49,23 @@ public class OpenChordNode extends AbstractComponentType {
 		
 	}
 	
+	// Example got in:
+	// http://stackoverflow.com/questions/604424/java-convert-string-to-enum
+	public enum Cmd {
+		READY("Ready"),
+		INSERT("Insert");    
+	      
+	    private final String vlr;  
+	       
+	    Cmd(String valor){  
+	            this.vlr = valor;  
+	    }  
+	        
+	    public String getValorEnum(){  
+	          return vlr;  
+	    }  
+	}
+	
 	/**
 	 * Bla, bla, bla...
 	 *
@@ -58,10 +77,18 @@ public class OpenChordNode extends AbstractComponentType {
     public void receiveMessage(Object o) {
 		String msg = (String) o.toString();
 		System.out.println("Message: "+ msg);
-		// Accepted messages
-		// Create a Listener
-		String accepted = new String("ready");
-		if (msg.toString() == accepted.toString()) {
+		if (msg.trim().equals("READY".toString())) {
+				System.out.println("Connecting to Bootstrap!");
+				connectChord();
+		} else {
+				System.out.println("Message was not recognized!");
+		}
+	}
+
+	/**
+	 * Nothing to say
+	 */
+	public void connectChord() {
 			if (connected == false) {
 				try {
 		    		// Reading OpenChord Properties
@@ -76,22 +103,18 @@ public class OpenChordNode extends AbstractComponentType {
 				
 				try {
 					String protocol = URL.KNOWN_PROTOCOLS.get(URL.SOCKET_PROTOCOL);
-					
 					ServerSocket s = new ServerSocket(0);
 			        int port = s.getLocalPort();
 			        s.close();
-			        
 			        System.out.println("PORTA: "+port);
-			        
 			        String address = InetAddress.getLocalHost().toString();
 			        address = address.substring(address.indexOf("/") + 1, address.length());
 			        URL localURL = new URL(protocol + "://" + address + ":" + port + "/");
 			        URL bootstrapURL = new URL(protocol + "://127.0.0.1/8080");
-			        
 			        System.out.println("Local: "+localURL.toString()+" / Bootstrap: "+bootstrapURL);
-			        
 			        node = new ChordImpl();
 			        node.join(localURL, bootstrapURL);
+			        /* Erro no join - Leitura das propriedades do Log4J */
 			        System.out.println("TESTANDOOOOOOOO");
 			        connected = true;
 				} catch (Exception e) {
@@ -100,9 +123,6 @@ public class OpenChordNode extends AbstractComponentType {
 			} else {
 				System.out.println("Node already connected to Bootstrap!");
 			}
-		} else {
-			System.out.println("Message was not recognized!");
-		}
     }
 	
 	public void insertSampleData() {
